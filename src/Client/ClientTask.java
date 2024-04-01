@@ -29,7 +29,7 @@ public class ClientTask implements Runnable {
         try {
 
             switch (commandChar) {
-                case "L":
+                case "L", "D", "R":
                     commandBuffer = ByteBuffer.wrap(command.getBytes());
                     channel = SocketChannel.open();
                     sendRequest(channel, args, serverPort, commandBuffer);
@@ -37,22 +37,7 @@ public class ClientTask implements Runnable {
                     System.out.println(new String(displayReply(channel)));
                     channel.close();
                     break;
-                case "D":
-                    commandBuffer = ByteBuffer.wrap(command.getBytes());
-                    channel = SocketChannel.open();
-                    sendRequest(channel, args, serverPort, commandBuffer);
 
-                    System.out.println(new String(displayReply(channel)));
-                    channel.close();
-                    break;
-                case "R":
-                    commandBuffer = ByteBuffer.wrap(command.getBytes());
-                    channel = SocketChannel.open();
-                    sendRequest(channel, args, serverPort, commandBuffer);
-
-                    System.out.println(new String(displayReply(channel)));
-                    channel.close();
-                    break;
                 case "G":
                     fileName = command.substring(1);
                     commandBuffer = ByteBuffer.wrap(command.getBytes());
