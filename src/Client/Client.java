@@ -42,7 +42,7 @@ public class Client {
             }
 
             if (!command.equalsIgnoreCase("q")) {
-                ClientTask ct = new ClientTask(command, args, keyboard);
+                ClientTask ct = new ClientTask(command, args);
                 es.submit(ct);
             }
         } while (!command.equalsIgnoreCase("q"));

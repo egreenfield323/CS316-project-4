@@ -8,7 +8,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Scanner;
 
 public class ClientTask implements Runnable {
 
@@ -16,7 +15,7 @@ public class ClientTask implements Runnable {
     private final int serverPort;
     private final String command;
 
-    public ClientTask(String c, String[] args, Scanner k) {
+    public ClientTask(String c, String[] args) {
         this.command = c;
         this.args = args;
         this.serverPort = Integer.parseInt(args[1]);
