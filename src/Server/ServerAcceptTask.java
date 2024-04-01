@@ -1,37 +1,45 @@
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.*;
+package Server;
 
 import static java.lang.String.format;
 
-public class Server {
-    public static void main(String[] args) throws Exception {
-        if (args.length != 1) {
-            System.out.println("Please specify server port.");
-            return;
-        }
-        int port = Integer.parseInt(args[0]);
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SocketChannel;
 
-        ServerSocketChannel welcomeChannel = ServerSocketChannel.open();
-        welcomeChannel.socket().bind(new InetSocketAddress(port));
+public class ServerAcceptTask implements Runnable {
+    private SocketChannel serveChannel;
+
+    public ServerAcceptTask(SocketChannel serveChannel) {
+        this.serveChannel = serveChannel;
+    }
+
+    public void run() {
+
+        ByteBuffer request = ByteBuffer.allocate(1024);
+        int numBytes = 0;
+        try {
+            numBytes = serveChannel.read(request);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        request.flip();
+
+        byte[] clientQueryArray = new byte[numBytes];
+        request.get(clientQueryArray);
+        String command = new String(clientQueryArray);
+        String commandChar = command.substring(0, 1).toUpperCase();
 
         ByteBuffer reply;
         String selectedFile;
         File f;
         File directoryPath = new File("src/files");
 
-        while (true) {
-            SocketChannel serveChannel = welcomeChannel.accept();
-            ByteBuffer request = ByteBuffer.allocate(1024);
-            int numBytes = serveChannel.read(request);
-
-            request.flip();
-
-            byte[] clientQueryArray = new byte[numBytes];
-            request.get(clientQueryArray);
-            String command = new String(clientQueryArray);
-            String commandChar = command.substring(0, 1).toUpperCase();
+        try {
 
             switch (commandChar) {
                 case "L":
@@ -70,7 +78,8 @@ public class Server {
                         reply = ByteBuffer.wrap(returnMessage.getBytes());
                         serveChannel.write(reply);
                     } else {
-                        String returnMessage = String.format("Could not rename %s to %s", selectedFile, newFileName);
+                        String returnMessage = String.format("Could not rename %s to %s", selectedFile,
+                                newFileName);
                         reply = ByteBuffer.wrap(returnMessage.getBytes());
                         serveChannel.write(reply);
                     }
@@ -103,11 +112,11 @@ public class Server {
                                 serveChannel.write(content);
                                 content.clear();
                             }
-                            fs.close();
                             serveChannel.shutdownOutput();
                         }
                     }
                     break;
+
                 case "U":
                     selectedFile = command.substring(1);
                     FileOutputStream fo = new FileOutputStream(directoryPath + "/" + selectedFile, true);
@@ -125,12 +134,16 @@ public class Server {
                     fo.close();
                     serveChannel.close();
                     break;
+
                 default:
                     if (!command.equals("0")) {
                         System.out.println("Invalid command");
                     }
                     serveChannel.close();
             }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
