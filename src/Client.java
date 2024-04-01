@@ -3,10 +3,16 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 public class Client {
 
@@ -17,6 +23,11 @@ public class Client {
             return;
         }
         int serverPort = Integer.parseInt(args[1]);
+
+        //this stuff is from the pi day threading activity
+        int numThreads = 20;
+        List<Future<Long>> resultList = new ArrayList<>();
+        ExecutorService es = Executors.newFixedThreadPool(numThreads);
 
 
         Scanner keyboard = new Scanner(System.in);
@@ -82,7 +93,7 @@ public class Client {
                     channel = SocketChannel.open();
                     sendRequest(channel, args, serverPort, commandBuffer);
 
-                    if(new String(displayReply(channel)).equals("F")){
+                    if (new String(displayReply(channel)).equals("F")) {
                         System.out.println("Could not find that file.");
                     } else {
                         channel.write(ByteBuffer.wrap("R".getBytes()));
@@ -109,28 +120,16 @@ public class Client {
                     File f = new File("src/files/" + fileName);
                     if (f.exists()) {
                         command += fileName;
-
                         commandBuffer = ByteBuffer.wrap(command.getBytes());
+
                         channel = SocketChannel.open();
                         sendRequest(channel, args, serverPort, commandBuffer);
 
                         if (new String(displayReply(channel)).equals("S")) {
-
-                            FileInputStream fs = new FileInputStream(f);
-                            fc = fs.getChannel();
-                            int bufferSize = 1024;
-                            if (bufferSize > fc.size()) {
-                                bufferSize = (int) fc.size();
-                            }
-
-                            ByteBuffer fileContent = ByteBuffer.allocate(bufferSize);
-                            while (fc.read(fileContent) >= 0) {
-                                channel.write(fileContent.flip());
-                                fileContent.clear();
-                            }
-                            channel.shutdownOutput();
-                            channel.close();
-                            System.out.println("File successfully uploaded");
+                            //send stuff to the task class
+                            ClientUploadTask task = new ClientUploadTask(f);
+                            es.submit(task);
+                            es.shutdown();
                         }
                     } else {
                         System.out.println("File not in current directory");
